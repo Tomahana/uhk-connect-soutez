@@ -735,12 +735,12 @@
     <h2>Žádost odeslána</h2>
     <p>Vaše žádost byla úspěšně přijata. Potvrzení vám přijde na uvedený e-mail do několika minut.</p>
     <div class="success-id" id="success-id">CONN-2026-001</div>
-    <p style="margin-top:0.5rem; font-size:13px;">Formální kontrola proběhne do 2 pracovních dnů.<br>V případě dotazů kontaktujte <strong>veronika.hruzova@uhk.cz</strong>.</p>
+    <p style="margin-top:0.5rem; font-size:13px;">Formální kontrola proběhne do 2 pracovních dnů.<br>V případě dotazů kontaktujte <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="225447504d4c4b49430c4a5057584d544362574a490c4158">[email&#160;protected]</a></strong>.</p>
   </div>
 
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const SECTIONS = 5;
 let currentSection = 1;
 
@@ -881,18 +881,82 @@ function showFileName(inputId, displayId) {
   display.textContent = files ? '✓ ' + files : '';
 }
 
-function generateId() {
-  const n = Math.floor(Math.random() * 900) + 100;
-  return 'CONN-2026-' + n;
+const API = 'https://script.google.com/macros/s/AKfycbzRQ142bueVniRoBPyci-GLCw9iKnjLii7C51Nf17Xbp_hqOwlOQQl-MPa5FJ1pGp6_/exec';
+
+// Ověření přihlášení při načtení stránky
+const _user = JSON.parse(sessionStorage.getItem('uhk_user') || 'null');
+if (!_user || _user.role !== 'zadavatel') {
+  location.href = 'index.html';
 }
 
-function submitForm() {
+async function submitForm() {
   if (!validateSection(5)) return;
-  document.getElementById('form-wrapper').style.display = 'none';
-  const sc = document.getElementById('success-screen');
-  sc.classList.add('visible');
-  document.getElementById('success-id').textContent = generateId();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const btn = document.querySelector('#section-5 .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Odesílám…';
+
+  const checked = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+    .map(el => el.value).join(', ');
+
+  const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+  const data = {
+    jmeno:                val('jmeno'),
+    pracoviste:           val('pracoviste'),
+    typ_zadatele:         checked('typ_zadatele'),
+    roky_phd:             val('roky_phd'),
+    skolitel:             val('skolitel'),
+    nazev:                val('nazev'),
+    instituce:            val('instituce'),
+    stat:                 val('stat'),
+    typ_aktivity:         checked('typ_aktivity'),
+    datum_od:             val('datum_od'),
+    datum_do:             val('datum_do'),
+    cil:                  val('cil'),
+    spoluprace:           val('spoluprace'),
+    profil:               val('profil'),
+    b_jizdne:             val('b_jizdne') || 0,
+    b_ubytovani:          val('b_ubytovani') || 0,
+    b_stravne:            val('b_stravne') || 0,
+    b_doprava:            val('b_doprava') || 0,
+    b_konference:         val('b_konference') || 0,
+    b_publikace:          val('b_publikace') || 0,
+    celkem_kc:            calcTotal(),
+    rozpocet_zduvodneni:  val('rozpocet_zduvodneni'),
+    typ_dokladu:          checked('typ_dokladu'),
+  };
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'prihlaska',
+        email: _user.email,
+        heslo: sessionStorage.getItem('uhk_heslo') || '',
+        data
+      })
+    }).then(r => r.json());
+
+    if (!res.ok) {
+      btn.disabled = false;
+      btn.textContent = 'Odeslat žádost →';
+      alert('Chyba při odeslání: ' + res.error);
+      return;
+    }
+
+    document.getElementById('form-wrapper').style.display = 'none';
+    const sc = document.getElementById('success-screen');
+    sc.classList.add('visible');
+    document.getElementById('success-id').textContent = res.data.id;
+    localStorage.removeItem(DRAFT_KEY);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Odeslat žádost →';
+    alert('Chyba připojení. Zkuste to prosím znovu.');
+  }
 }
 
 document.querySelectorAll('.radio-group input[type="radio"], .check-group input[type="checkbox"]').forEach(inp => {
@@ -900,13 +964,111 @@ document.querySelectorAll('.radio-group input[type="radio"], .check-group input[
     const group = this.closest('.radio-group, .check-group');
     if (!group) return;
     if (this.type === 'radio') {
-      group.querySelectorAll('label').forEach(l => l.classList.remove('selected'));
+      group.querySelectorAll('labels').forEach(l => l.classList.remove('selected'));
       this.closest('label').classList.add('selected');
     } else {
       this.closest('label').classList.toggle('selected', this.checked);
     }
   });
 });
+
+// ── Autosave ──────────────────────────────────────────────
+const DRAFT_KEY = 'uhk_connect_draft_' + (_user ? _user.email : 'anon');
+
+function saveDraft() {
+  const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const checked = name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(e => e.value);
+  const draft = {
+    jmeno: val('jmeno'), email: val('email'), pracoviste: val('pracoviste'),
+    typ_zadatele: checked('typ_zadatele')[0] || '',
+    roky_phd: val('roky_phd'), skolitel: val('skolitel'),
+    nazev: val('nazev'), instituce: val('instituce'), stat: val('stat'),
+    typ_aktivity: checked('typ_aktivity'),
+    datum_od: val('datum_od'), datum_do: val('datum_do'),
+    cil: val('cil'), spoluprace: val('spoluprace'), profil: val('profil'),
+    b_jizdne: val('b_jizdne'), b_ubytovani: val('b_ubytovani'),
+    b_stravne: val('b_stravne'), b_doprava: val('b_doprava'),
+    b_konference: val('b_konference'), b_publikace: val('b_publikace'),
+    rozpocet_zduvodneni: val('rozpocet_zduvodneni'),
+    typ_dokladu: checked('typ_dokladu')[0] || '',
+    _section: currentSection,
+    _saved: new Date().toLocaleTimeString('cs', {hour:'2-digit',minute:'2-digit'})
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  showSaveIndicator();
+}
+
+function showSaveIndicator() {
+  let ind = document.getElementById('save-indicator');
+  if (!ind) {
+    ind = document.createElement('div');
+    ind.id = 'save-indicator';
+    ind.style.cssText = 'position:fixed;bottom:1.2rem;right:1.2rem;background:var(--ink);color:var(--paper);font-size:12px;padding:6px 14px;border-radius:20px;opacity:0;transition:opacity 0.3s;z-index:999;font-family:"DM Sans",sans-serif;';
+    document.body.appendChild(ind);
+  }
+  ind.textContent = 'Uloženo ' + new Date().toLocaleTimeString('cs', {hour:'2-digit',minute:'2-digit'});
+  ind.style.opacity = '1';
+  setTimeout(() => ind.style.opacity = '0', 2000);
+}
+
+function loadDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) return;
+  let draft;
+  try { draft = JSON.parse(raw); } catch(e) { return; }
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== '') el.value = v; };
+  set('jmeno', draft.jmeno); set('pracoviste', draft.pracoviste);
+  set('roky_phd', draft.roky_phd); set('skolitel', draft.skolitel);
+  set('nazev', draft.nazev); set('instituce', draft.instituce); set('stat', draft.stat);
+  set('datum_od', draft.datum_od); set('datum_do', draft.datum_do);
+  set('cil', draft.cil); set('spoluprace', draft.spoluprace); set('profil', draft.profil);
+  set('b_jizdne', draft.b_jizdne || 0); set('b_ubytovani', draft.b_ubytovani || 0);
+  set('b_stravne', draft.b_stravne || 0); set('b_doprava', draft.b_doprava || 0);
+  set('b_konference', draft.b_konference || 0); set('b_publikace', draft.b_publikace || 0);
+  set('rozpocet_zduvodneni', draft.rozpocet_zduvodneni);
+
+  if (draft.typ_zadatele) {
+    const r = document.querySelector(`input[name="typ_zadatele"][value="${draft.typ_zadatele}"]`);
+    if (r) { r.checked = true; r.closest('label').classList.add('selected'); toggleConditional(); }
+  }
+  if (draft.typ_aktivity) draft.typ_aktivity.forEach(v => {
+    const c = document.querySelector(`input[name="typ_aktivity"][value="${v}"]`);
+    if (c) { c.checked = true; c.closest('label').classList.add('selected'); }
+  });
+  if (draft.typ_dokladu) {
+    const r = document.querySelector(`input[name="typ_dokladu"][value="${draft.typ_dokladu}"]`);
+    if (r) { r.checked = true; r.closest('label').classList.add('selected'); }
+  }
+
+  ['cil','spoluprace','profil','rozpocet_zduvodneni'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) updateCounter(id, parseInt(el.getAttribute('maxlength')));
+  });
+  updateCounter('nazev', 150);
+  calcTotal();
+
+  if (draft._section && draft._section > 1) {
+    showSection(draft._section);
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:var(--accent-soft);border:1px solid var(--border-focus);border-radius:6px;padding:10px 16px;font-size:13px;color:var(--ink-mid);margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;';
+    banner.innerHTML = `Načten rozpracovaný formulář (uložen ${draft._saved || 'dříve'}).
+      <button onclick="clearDraft()" style="background:none;border:none;font-size:12px;color:var(--accent);cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;">Začít znovu</button>`;
+    const title = document.querySelector('.page-title');
+    if (title) title.after(banner);
+  }
+}
+
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); location.reload(); }
+
+let _saveTimer;
+document.querySelectorAll('input:not([type=file]), textarea, select').forEach(el => {
+  el.addEventListener('input', () => { clearTimeout(_saveTimer); _saveTimer = setTimeout(saveDraft, 700); });
+  el.addEventListener('change', () => { clearTimeout(_saveTimer); _saveTimer = setTimeout(saveDraft, 700); });
+});
+
+// Načti draft po načtení stránky
+window.addEventListener('load', loadDraft);
 </script>
 </body>
 </html>
