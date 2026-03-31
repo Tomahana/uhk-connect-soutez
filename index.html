@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UHK Connect — Přihlášení</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a18;
+    --ink-mid: #4a4a45;
+    --ink-light: #8a8a82;
+    --paper: #f5f3ee;
+    --paper-warm: #ede9e0;
+    --accent: #c8410a;
+    --accent-soft: #f0ddd3;
+    --border: rgba(26,26,24,0.12);
+    --border-focus: rgba(200,65,10,0.4);
+    --r: 6px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 0.3rem;
+    color: var(--ink);
+  }
+  .logo span { color: var(--accent); font-style: italic; }
+  .subtitle {
+    font-size: 13px;
+    color: var(--ink-light);
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.8rem;
+    gap: 0;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--ink-light);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    font-weight: 500;
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  .field { margin-bottom: 1.2rem; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+  .field .hint {
+    font-size: 12px;
+    color: var(--ink-light);
+    margin-bottom: 5px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(200,65,10,0.08);
+    background: white;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--r);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 0.4rem;
+  }
+  .btn:hover { background: #a83508; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { background: var(--ink-light); cursor: not-allowed; }
+
+  .msg {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: var(--r);
+    margin-top: 1rem;
+    display: none;
+  }
+  .msg.error { background: #fef2ef; color: #a83508; border: 1px solid #f0ddd3; display: block; }
+  .msg.success { background: #edf7f2; color: #1a5c3a; border: 1px solid #c0e8d4; display: block; }
+
+  .footer-note {
+    margin-top: 1.5rem;
+    font-size: 12px;
+    color: var(--ink-light);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">UHK <span>Connect</span></div>
+  <div class="subtitle">Soutěž UHK Connect — Výzva č. 2 / 2026<br>Krátké projekty pro síťování, mobilitu a spolupráci</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('prihlaseni')">Přihlášení</button>
+    <button class="tab-btn" onclick="switchTab('registrace')">Žádost o heslo</button>
+  </div>
+
+  <!-- Přihlášení -->
+  <div class="tab-pane active" id="pane-prihlaseni">
+    <div class="field">
+      <label>E-mail (UHK)</label>
+      <input type="email" id="login-email" placeholder="jmeno.prijmeni@uhk.cz" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Heslo</label>
+      <div class="hint">Obdrželi jste jej e-mailem po registraci</div>
+      <input type="password" id="login-heslo" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn" id="btn-login" onclick="doLogin()">Přihlásit se</button>
+    <div class="msg" id="msg-login"></div>
+  </div>
+
+  <!-- Registrace -->
+  <div class="tab-pane" id="pane-registrace">
+    <div class="field">
+      <label>Jméno a příjmení</label>
+      <input type="text" id="reg-jmeno" placeholder="Jana Nováková">
+    </div>
+    <div class="field">
+      <label>E-mail (UHK)</label>
+      <div class="hint">Na tuto adresu vám přijde heslo</div>
+      <input type="email" id="reg-email" placeholder="jmeno.prijmeni@uhk.cz">
+    </div>
+    <button class="btn" id="btn-reg" onclick="doRegistrace()">Zaslat heslo</button>
+    <div class="msg" id="msg-reg"></div>
+  </div>
+</div>
+
+<div class="footer-note">
+  Dotazy: <strong>veronika.hruzova@uhk.cz</strong> · +420 777 147 670<br>
+  Přihlášky přijímány průběžně do 14. 10. 2026
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzRQ142bueVniRoBPyci-GLCw9iKnjLii7C51Nf17Xbp_hqOwlOQQl-MPa5FJ1pGp6_/exec';
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['prihlaseni','registrace'][i] === id);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + id).classList.add('active');
+}
+
+function setMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = 'msg ' + type;
+  el.textContent = text;
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? '<span class="spinner"></span>Odesílám…'
+    : (btnId === 'btn-login' ? 'Přihlásit se' : 'Zaslat heslo');
+}
+
+async function callAPI(data) {
+  const resp = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return resp.json();
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const heslo = document.getElementById('login-heslo').value.trim();
+  if (!email || !heslo) { setMsg('msg-login', 'error', 'Vyplňte email a heslo.'); return; }
+
+  setLoading('btn-login', true);
+  try {
+    const res = await callAPI({ action: 'prihlaseni', email, heslo });
+    if (!res.ok) {
+      setMsg('msg-login', 'error', res.error);
+    } else {
+      // Uložíme session do sessionStorage
+      sessionStorage.setItem('uhk_user', JSON.stringify(res.data));
+      sessionStorage.setItem('uhk_heslo', heslo);
+      // Přesměrování dle role
+      const role = res.data.role;
+      if (role === 'zadavatel')    location.href = 'prihlaska.html';
+      else if (role === 'komise')  location.href = 'komise.html';
+      else if (role === 'spravce') location.href = 'spravce.html';
+      else if (role === 'prorektorka') location.href = 'prorektorka.html';
+      else setMsg('msg-login', 'error', 'Neznámá role: ' + role);
+    }
+  } catch(e) {
+    setMsg('msg-login', 'error', 'Chyba připojení. Zkuste to prosím znovu.');
+  }
+  setLoading('btn-login', false);
+}
+
+async function doRegistrace() {
+  const jmeno = document.getElementById('reg-jmeno').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  if (!jmeno || !email) { setMsg('msg-reg', 'error', 'Vyplňte jméno a email.'); return; }
+  if (!email.endsWith('@uhk.cz')) { setMsg('msg-reg', 'error', 'Povoleny jsou pouze adresy @uhk.cz.'); return; }
+
+  setLoading('btn-reg', true);
+  try {
+    const res = await callAPI({ action: 'registrace', jmeno, email });
+    if (!res.ok) {
+      setMsg('msg-reg', 'error', res.error);
+    } else {
+      setMsg('msg-reg', 'success', 'Heslo bylo odesláno na ' + email + '. Zkontrolujte svou schránku.');
+      document.getElementById('reg-jmeno').value = '';
+      document.getElementById('reg-email').value = '';
+    }
+  } catch(e) {
+    setMsg('msg-reg', 'error', 'Chyba připojení. Zkuste to prosím znovu.');
+  }
+  setLoading('btn-reg', false);
+}
+</script>
+</body>
+</html>
