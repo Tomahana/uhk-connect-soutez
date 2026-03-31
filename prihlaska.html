@@ -650,17 +650,18 @@
 
       <div class="field" id="f-soubor-rozpoctu">
         <label>Soubor rozpočtu <span class="req">*</span></label>
-        <div class="hint">Dle vzoru — Příloha č. 1 Výzvy. Word, Excel nebo PDF, max. 10 MB.</div>
+        <div class="hint">Dle vzoru — Příloha č. 1 Výzvy. Word, Excel nebo PDF, max. 4.5 MB.</div>
         <div class="file-upload" onclick="document.getElementById('file-rozpocet').click()">
-          <input type="file" id="file-rozpocet" accept=".doc,.docx,.xls,.xlsx,.pdf" onchange="showFileName('file-rozpocet','fname-rozpocet')">
+          <input type="file" id="file-rozpocet" accept=".doc,.docx,.xls,.xlsx,.pdf" onchange="handleFileSelect('file-rozpocet','fname-rozpocet','status-rozpocet')">
           <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
           </svg>
-          <div class="upload-text">Klikněte pro nahrání souboru</div>
-          <div class="upload-hint">DOC, DOCX, XLS, XLSX, PDF · max. 10 MB</div>
+          <div class="upload-text" id="upload-text-rozpocet">Klikněte pro výběr souboru</div>
+          <div class="upload-hint">DOC, DOCX, XLS, XLSX, PDF · max. 4.5 MB</div>
         </div>
         <div class="file-name" id="fname-rozpocet"></div>
-        <div class="err-msg">Nahrajte soubor rozpočtu.</div>
+        <div id="status-rozpocet" style="font-size:12px;margin-top:5px;"></div>
+        <div class="err-msg">Vyberte soubor rozpočtu.</div>
       </div>
 
       <div class="form-nav">
@@ -690,17 +691,18 @@
 
       <div class="field" id="f-soubor-dokladu">
         <label>Nahrání dokladu (příloha) <span class="req">*</span></label>
-        <div class="hint">PDF, JPG nebo Word, max. 10 MB · lze nahrát až 3 soubory</div>
+        <div class="hint">PDF, JPG nebo Word, max. 4.5 MB</div>
         <div class="file-upload" onclick="document.getElementById('file-doklad').click()">
-          <input type="file" id="file-doklad" accept=".pdf,.jpg,.jpeg,.doc,.docx" multiple onchange="showFileName('file-doklad','fname-doklad')">
+          <input type="file" id="file-doklad" accept=".pdf,.jpg,.jpeg,.doc,.docx" onchange="handleFileSelect('file-doklad','fname-doklad','status-doklad')">
           <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
           </svg>
-          <div class="upload-text">Klikněte pro nahrání souboru</div>
-          <div class="upload-hint">PDF, JPG, DOC, DOCX · max. 10 MB · max. 3 soubory</div>
+          <div class="upload-text" id="upload-text-doklad">Klikněte pro výběr souboru</div>
+          <div class="upload-hint">PDF, JPG, DOC, DOCX · max. 4.5 MB</div>
         </div>
         <div class="file-name" id="fname-doklad"></div>
-        <div class="err-msg">Nahrajte alespoň jeden doklad.</div>
+        <div id="status-doklad" style="font-size:12px;margin-top:5px;"></div>
+        <div class="err-msg">Vyberte alespoň jeden doklad.</div>
       </div>
 
       <div class="declaration-box">
@@ -810,8 +812,7 @@ function validateSection(n) {
   if (n === 4) {
     ['rozpocet-zduvodneni','soubor-rozpoctu'].forEach(clearErr);
     if (!val('rozpocet_zduvodneni')) setErr('rozpocet-zduvodneni');
-    const f = document.getElementById('file-rozpocet');
-    if (!f || !f.files.length) setErr('soubor-rozpoctu');
+    if (!_uploadedFiles.rozpocet) setErr('soubor-rozpoctu');
     const total = calcTotal();
     if (total > 80000) ok = false;
   }
@@ -820,8 +821,7 @@ function validateSection(n) {
     ['typ-dokladu','soubor-dokladu','souhlas'].forEach(clearErr);
     const td = document.querySelector('input[name="typ_dokladu"]:checked');
     if (!td) setErr('typ-dokladu');
-    const fd = document.getElementById('file-doklad');
-    if (!fd || !fd.files.length) setErr('soubor-dokladu');
+    if (!_uploadedFiles.doklad) setErr('soubor-dokladu');
     const s = document.getElementById('souhlas');
     if (!s || !s.checked) setErr('souhlas');
   }
@@ -894,7 +894,18 @@ async function submitForm() {
 
   const btn = document.querySelector('#section-5 .btn-primary');
   btn.disabled = true;
-  btn.textContent = 'Odesílám…';
+  btn.textContent = 'Nahrávám soubory…';
+
+  // Generuj dočasné ID pro složku na Drive (finální ID přijde ze serveru)
+  const tempId = 'CONN-2026-draft-' + Date.now();
+
+  // Nahraj soubory paralelně
+  const [urlRozpocet, urlDoklad] = await Promise.all([
+    uploadFileToAPI('file-rozpocet', 'rozpocet', tempId),
+    uploadFileToAPI('file-doklad', 'doklad', tempId)
+  ]);
+
+  btn.textContent = 'Odesílám přihlášku…';
 
   const checked = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
     .map(el => el.value).join(', ');
@@ -925,6 +936,8 @@ async function submitForm() {
     celkem_kc:            calcTotal(),
     rozpocet_zduvodneni:  val('rozpocet_zduvodneni'),
     typ_dokladu:          checked('typ_dokladu'),
+    url_rozpocet:         urlRozpocet || '',
+    url_doklad:           urlDoklad || '',
   };
 
   try {
@@ -971,6 +984,80 @@ document.querySelectorAll('.radio-group input[type="radio"], .check-group input[
     }
   });
 });
+
+// ── Nahrávání souborů ─────────────────────────────────────
+const _uploadedFiles = { rozpocet: null, doklad: null }; // url po nahrání
+
+function handleFileSelect(inputId, displayId, statusId) {
+  const input = document.getElementById(inputId);
+  const display = document.getElementById(displayId);
+  const status = document.getElementById(statusId);
+  const textEl = document.getElementById('upload-text-' + (inputId === 'file-rozpocet' ? 'rozpocet' : 'doklad'));
+  if (!input.files.length) return;
+  const file = input.files[0];
+
+  // Limit 4.5 MB
+  if (file.size > 4.7 * 1024 * 1024) {
+    status.style.color = 'var(--accent)';
+    status.textContent = 'Soubor je příliš velký (max 4.5 MB).';
+    input.value = '';
+    return;
+  }
+
+  display.textContent = file.name;
+  if (textEl) textEl.textContent = file.name;
+  status.style.color = 'var(--ink-light)';
+  status.textContent = 'Soubor připraven — nahraje se při odeslání přihlášky.';
+}
+
+async function uploadFileToAPI(inputId, typ, id_prihlasky) {
+  const input = document.getElementById(inputId);
+  if (!input.files.length) return null;
+  const file = input.files[0];
+  const statusId = 'status-' + (typ === 'rozpocet' ? 'rozpocet' : 'doklad');
+  const status = document.getElementById(statusId);
+
+  status.style.color = 'var(--ink-light)';
+  status.textContent = 'Nahrávám ' + file.name + '…';
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        const res = await fetch(API, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'uploadFile',
+            email: _user.email,
+            heslo: sessionStorage.getItem('uhk_heslo') || '',
+            fileName: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            base64Data: base64,
+            id_prihlasky,
+            typ
+          })
+        }).then(r => r.json());
+
+        if (res.ok) {
+          _uploadedFiles[typ] = res.data.url;
+          status.style.color = 'var(--success)';
+          status.textContent = '✓ Nahráno: ' + res.data.fileName;
+          resolve(res.data.url);
+        } else {
+          status.style.color = 'var(--accent)';
+          status.textContent = 'Chyba nahrávání: ' + res.error;
+          resolve(null);
+        }
+      } catch(err) {
+        status.style.color = 'var(--accent)';
+        status.textContent = 'Chyba připojení při nahrávání.';
+        resolve(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 // ── Autosave ──────────────────────────────────────────────
 const DRAFT_KEY = 'uhk_connect_draft';
