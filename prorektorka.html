@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prorektorka — UHK Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1a1a18;--ink-mid:#4a4a45;--ink-light:#8a8a82;
+    --paper:#f5f3ee;--paper-warm:#ede9e0;
+    --accent:#c8410a;--accent-soft:#f0ddd3;
+    --success:#2d6a4f;--success-soft:#edf7f2;
+    --border:rgba(26,26,24,0.12);--r:6px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;}
+
+  .site-header{background:var(--ink);color:var(--paper);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'DM Serif Display',serif;font-size:18px;}
+  .logo span{color:var(--accent);font-style:italic;}
+  .header-right{display:flex;align-items:center;gap:1rem;}
+  .role-badge{font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:20px;color:rgba(245,243,238,0.7);}
+  .btn-logout{font-size:12px;color:rgba(245,243,238,0.5);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-logout:hover{color:var(--paper);}
+
+  .layout{max-width:1100px;margin:0 auto;padding:2rem;}
+  .page-header{margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .page-header h1{font-family:'DM Serif Display',serif;font-size:1.8rem;font-weight:400;}
+  .page-header p{color:var(--ink-mid);font-size:13px;margin-top:4px;}
+
+  .summary-bar{background:white;border:1px solid var(--border);border-radius:8px;padding:1rem 1.4rem;display:flex;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .summary-item .lbl{font-size:11px;color:var(--ink-light);text-transform:uppercase;letter-spacing:0.06em;}
+  .summary-item .val{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-top:1px;}
+  .summary-item .val.green{color:var(--success);}
+  .summary-item .val.accent{color:var(--accent);}
+
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;}
+  .filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:white;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--ink-mid);transition:all 0.2s;}
+  .filter-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .btn{padding:8px 18px;border-radius:var(--r);border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;}
+  .btn-primary{background:var(--accent);color:white;}
+  .btn-primary:hover{background:#a83508;}
+  .btn-export{background:var(--success);color:white;}
+  .btn-export:hover{background:#235840;}
+  .btn-ghost{background:white;color:var(--ink-mid);border:1px solid var(--border);}
+
+  table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+  thead tr{background:var(--paper-warm);}
+  th{text-align:left;font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-light);padding:10px 14px;border-bottom:1px solid var(--border);}
+  td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.supported td{background:#f0faf5;}
+  tr:hover td{background:var(--paper);}
+  tr.supported:hover td{background:#e4f5ed;}
+
+  .score-pill{display:inline-flex;align-items:center;justify-content:center;width:40px;height:28px;border-radius:6px;font-family:'DM Serif Display',serif;font-size:1rem;font-weight:400;}
+  .score-high{background:#edf7f2;color:var(--success);}
+  .score-mid{background:#fef9ec;color:#7a5c00;}
+  .score-low{background:#fef2ef;color:var(--accent);}
+  .score-none{background:var(--paper-warm);color:var(--ink-light);}
+
+  .support-toggle{display:flex;align-items:center;gap:8px;}
+  .toggle{position:relative;width:36px;height:20px;cursor:pointer;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle-track{position:absolute;inset:0;background:var(--border);border-radius:10px;transition:background 0.2s;}
+  .toggle input:checked + .toggle-track{background:var(--success);}
+  .toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .toggle input:checked ~ .toggle-thumb{transform:translateX(16px);}
+
+  .amount-input{width:100px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;}
+  .amount-input:focus{outline:none;border-color:rgba(200,65,10,0.4);}
+
+  .detail-panel{display:none;background:white;border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-top:1rem;}
+  .detail-panel.open{display:block;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
+  .detail-field label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);}
+  .detail-field p{font-size:14px;margin-top:3px;line-height:1.6;}
+  .detail-field.full{grid-column:1/-1;}
+
+  .loading{text-align:center;padding:3rem;color:var(--ink-light);}
+  .empty{text-align:center;padding:3rem;color:var(--ink-light);}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">UHK <span>Connect</span></div>
+  <div class="header-right">
+    <span class="role-badge">Prorektorka</span>
+    <span id="user-name" style="font-size:13px;color:rgba(245,243,238,0.7);"></span>
+    <button class="btn-logout" onclick="logout()">Odhlásit</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="page-header">
+    <div>
+      <h1>Rozhodnutí o podpoře</h1>
+      <p>Přehled hodnocených přihlášek seřazených dle skóre. Označte projekty k podpoře.</p>
+    </div>
+    <button class="btn btn-export" onclick="exportPodporene()">Exportovat podporované →</button>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item"><div class="lbl">Celkem v hodnocení</div><div class="val" id="s-total">—</div></div>
+    <div class="summary-item"><div class="lbl">Podporovaných</div><div class="val green" id="s-supported">0</div></div>
+    <div class="summary-item"><div class="lbl">Celková alokace</div><div class="val" id="s-alokace">800 000 Kč</div></div>
+    <div class="summary-item"><div class="lbl">Čerpáno / zbývá</div><div class="val accent" id="s-cerpano">0 Kč</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="filter-btn active" onclick="setFilter('vse',this)">Vše</button>
+    <button class="filter-btn" onclick="setFilter('podporene',this)">Podporované</button>
+    <button class="filter-btn" onclick="setFilter('nepodporene',this)">Nepodporované</button>
+  </div>
+
+  <div id="table-container"><div class="loading">Načítám přihlášky…</div></div>
+  <div class="detail-panel" id="detail-panel"></div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzRQ142bueVniRoBPyci-GLCw9iKnjLii7C51Nf17Xbp_hqOwlOQQl-MPa5FJ1pGp6_/exec';
+const _user = JSON.parse(sessionStorage.getItem('uhk_user') || 'null');
+const _heslo = sessionStorage.getItem('uhk_heslo') || '';
+if (!_user || _user.role !== 'prorektorka') location.href = 'index.html';
+document.getElementById('user-name').textContent = _user ? _user.jmeno : '';
+
+const ALOKACE = 800000;
+let allData = [];
+let currentFilter = 'vse';
+
+async function callAPI(data) {
+  const r = await fetch(API, {method:'POST', body: JSON.stringify(data)});
+  return r.json();
+}
+
+async function loadData() {
+  const res = await callAPI({action:'getPrihlasky', email:_user.email, heslo:_heslo});
+  if (!res.ok) { document.getElementById('table-container').innerHTML = '<div class="empty">Chyba: ' + res.error + '</div>'; return; }
+  allData = (res.data.prihlasky || []).filter(p => ['hodnoceni','rozhodnuto'].includes(p.stav));
+  updateSummary();
+  renderTable();
+}
+
+function updateSummary() {
+  const podporene = allData.filter(p => p.podporit === true || p.podporit === 'true');
+  const cerpano = podporene.reduce((s, p) => s + Number(p.vyse_podpory_kc || p.celkem_kc || 0), 0);
+  document.getElementById('s-total').textContent = allData.length;
+  document.getElementById('s-supported').textContent = podporene.length;
+  document.getElementById('s-cerpano').textContent = cerpano.toLocaleString('cs') + ' Kč / ' + (ALOKACE - cerpano).toLocaleString('cs') + ' Kč';
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('detail-panel').classList.remove('open');
+  renderTable();
+}
+
+function scorePill(score) {
+  if (score === null || score === '') return '<span class="score-pill score-none">—</span>';
+  const n = Number(score);
+  const cls = n >= 75 ? 'score-high' : n >= 50 ? 'score-mid' : 'score-low';
+  return `<span class="score-pill ${cls}">${n}</span>`;
+}
+
+function renderTable() {
+  let data = [...allData];
+  if (currentFilter === 'podporene') data = data.filter(p => p.podporit === true || p.podporit === 'true');
+  if (currentFilter === 'nepodporene') data = data.filter(p => !p.podporit || p.podporit === 'false');
+
+  if (!data.length) {
+    document.getElementById('table-container').innerHTML = '<div class="empty">Žádné přihlášky v tomto filtru.</div>';
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>#</th><th>Projekt</th><th>Žadatel</th><th>Skóre</th>
+    <th>Požadováno Kč</th><th>Přiděleno Kč</th><th>Podpořit</th><th></th>
+  </tr></thead><tbody>`;
+
+  data.forEach((p, i) => {
+    const isSup = p.podporit === true || p.podporit === 'true';
+    html += `<tr class="${isSup ? 'supported' : ''}" id="tr-${p.id_prihlasky}">
+      <td style="color:var(--ink-light);font-size:12px;">${i+1}</td>
+      <td>
+        <div style="font-weight:500;font-size:14px;">${p.nazev}</div>
+        <div style="font-size:11px;color:var(--ink-light);">${p.id_prihlasky} · ${p.instituce}, ${p.stat}</div>
+      </td>
+      <td>
+        <div style="font-size:13px;">${p.jmeno}</div>
+        <div style="font-size:11px;color:var(--ink-light);">${p.pracoviste}</div>
+      </td>
+      <td>${scorePill(p.prumerne_skore)} <span style="font-size:11px;color:var(--ink-light);">(${p.pocet_hodnoceni||0}×)</span></td>
+      <td style="font-variant-numeric:tabular-nums;">${Number(p.celkem_kc||0).toLocaleString('cs')}</td>
+      <td>
+        <input class="amount-input" type="number" id="amt-${p.id_prihlasky}"
+          value="${p.vyse_podpory_kc || p.celkem_kc || 0}" min="0" max="80000"
+          onchange="updateAmount('${p.id_prihlasky}')">
+      </td>
+      <td>
+        <div class="support-toggle">
+          <label class="toggle">
+            <input type="checkbox" id="sup-${p.id_prihlasky}" ${isSup ? 'checked' : ''}
+              onchange="toggleSupport('${p.id_prihlasky}')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+          <span style="font-size:12px;color:${isSup ? 'var(--success)' : 'var(--ink-light)'};" id="sup-lbl-${p.id_prihlasky}">${isSup ? 'Ano' : 'Ne'}</span>
+        </div>
+      </td>
+      <td><button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="showDetail('${p.id_prihlasky}')">Detail</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('table-container').innerHTML = html;
+}
+
+async function toggleSupport(id) {
+  const cb = document.getElementById('sup-' + id);
+  const podporit = cb.checked;
+  const amt = document.getElementById('amt-' + id)?.value;
+
+  const res = await callAPI({action:'setPodporit', email:_user.email, heslo:_heslo,
+    id_prihlasky:id, podporit, vyse_podpory_kc: amt});
+
+  if (res.ok) {
+    const p = allData.find(x => x.id_prihlasky === id);
+    if (p) { p.podporit = podporit; if (amt) p.vyse_podpory_kc = amt; }
+    const lbl = document.getElementById('sup-lbl-' + id);
+    if (lbl) { lbl.textContent = podporit ? 'Ano' : 'Ne'; lbl.style.color = podporit ? 'var(--success)' : 'var(--ink-light)'; }
+    const row = document.getElementById('tr-' + id);
+    if (row) row.className = podporit ? 'supported' : '';
+    updateSummary();
+  } else {
+    cb.checked = !podporit;
+    alert('Chyba: ' + res.error);
+  }
+}
+
+async function updateAmount(id) {
+  const amt = document.getElementById('amt-' + id)?.value;
+  const cb = document.getElementById('sup-' + id);
+  if (!cb?.checked) return;
+  await callAPI({action:'setPodporit', email:_user.email, heslo:_heslo,
+    id_prihlasky:id, podporit:true, vyse_podpory_kc:amt});
+  const p = allData.find(x => x.id_prihlasky === id);
+  if (p) p.vyse_podpory_kc = amt;
+  updateSummary();
+}
+
+function showDetail(id) {
+  const p = allData.find(x => x.id_prihlasky === id);
+  if (!p) return;
+  const panel = document.getElementById('detail-panel');
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <strong style="font-size:15px;">${p.id_prihlasky} — ${p.nazev}</strong>
+      <button style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;" onclick="document.getElementById('detail-panel').classList.remove('open')">Zavřít</button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-field"><label>Žadatel</label><p>${p.jmeno} · ${p.pracoviste}</p></div>
+      <div class="detail-field"><label>Typ / termín</label><p>${p.typ_aktivity} · ${p.datum_od} – ${p.datum_do}</p></div>
+      <div class="detail-field"><label>Instituce</label><p>${p.instituce}, ${p.stat}</p></div>
+      <div class="detail-field"><label>Průměrné skóre</label><p>${p.prumerne_skore ?? '—'} bodů (${p.pocet_hodnoceni||0} hodnocení)</p></div>
+      <div class="detail-field full"><label>Cíl aktivity a výstupy</label><p style="white-space:pre-wrap;">${p.cil}</p></div>
+      <div class="detail-field full"><label>Popis spolupráce</label><p style="white-space:pre-wrap;">${p.spoluprace}</p></div>
+      <div class="detail-field full"><label>Profil žadatele</label><p style="white-space:pre-wrap;">${p.profil}</p></div>
+      <div class="detail-field"><label>Požadovaná částka</label><p>${Number(p.celkem_kc||0).toLocaleString('cs')} Kč</p></div>
+      <div class="detail-field"><label>Odůvodnění rozpočtu</label><p style="white-space:pre-wrap;">${p.rozpocet_zduvodneni}</p></div>
+    </div>`;
+  panel.classList.add('open');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function exportPodporene() {
+  const res = await callAPI({action:'exportCSV', email:_user.email, heslo:_heslo, typ:'podporene'});
+  if (!res.ok) { alert('Chyba exportu: ' + res.error); return; }
+  const blob = new Blob(['\uFEFF' + res.data.csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'connect-podporene-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function logout() { sessionStorage.clear(); location.href = 'index.html'; }
+
+loadData();
+</script>
+</body>
+</html>

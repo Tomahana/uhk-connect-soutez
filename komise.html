@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Komise — UHK Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1a1a18;--ink-mid:#4a4a45;--ink-light:#8a8a82;
+    --paper:#f5f3ee;--paper-warm:#ede9e0;
+    --accent:#c8410a;--accent-soft:#f0ddd3;
+    --success:#2d6a4f;--success-soft:#edf7f2;
+    --border:rgba(26,26,24,0.12);--r:6px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;}
+
+  .site-header{background:var(--ink);color:var(--paper);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'DM Serif Display',serif;font-size:18px;}
+  .logo span{color:var(--accent);font-style:italic;}
+  .header-right{display:flex;align-items:center;gap:1rem;}
+  .role-badge{font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:20px;color:rgba(245,243,238,0.7);}
+  .btn-logout{font-size:12px;color:rgba(245,243,238,0.5);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-logout:hover{color:var(--paper);}
+
+  .layout{max-width:1000px;margin:0 auto;padding:2rem;}
+  .page-header{margin-bottom:1.5rem;}
+  .page-header h1{font-family:'DM Serif Display',serif;font-size:1.8rem;font-weight:400;}
+  .page-header p{color:var(--ink-mid);font-size:13px;margin-top:4px;}
+
+  .prihlaska-list{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem;}
+  .prihlaska-row{background:white;padding:1rem 1.2rem;display:flex;align-items:center;gap:1rem;cursor:pointer;transition:background 0.15s;}
+  .prihlaska-row:hover{background:var(--paper);}
+  .prihlaska-row.active{background:var(--accent-soft);}
+  .pr-id{font-size:12px;color:var(--ink-light);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:100px;}
+  .pr-name{flex:1;font-weight:500;font-size:14px;}
+  .pr-meta{font-size:12px;color:var(--ink-light);}
+  .pr-score{min-width:60px;text-align:right;font-family:'DM Serif Display',serif;font-size:1.1rem;}
+  .pr-score.done{color:var(--success);}
+  .pr-score.pending{color:var(--ink-light);}
+
+  .eval-panel{display:none;background:white;border:1px solid var(--border);border-radius:8px;padding:1.5rem;}
+  .eval-panel.open{display:block;}
+
+  .eval-header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+  .eval-header h2{font-family:'DM Serif Display',serif;font-size:1.3rem;font-weight:400;}
+  .eval-header .meta{font-size:13px;color:var(--ink-mid);margin-top:4px;}
+
+  .project-sections{margin-bottom:1.5rem;}
+  .proj-field{margin-bottom:1rem;}
+  .proj-field label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);}
+  .proj-field p{font-size:14px;margin-top:3px;line-height:1.6;white-space:pre-wrap;}
+
+  .criteria-section{border-top:1px solid var(--border);padding-top:1.2rem;margin-top:1.2rem;}
+  .criteria-section h3{font-size:13px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-light);margin-bottom:1rem;}
+
+  .criterion{margin-bottom:1.2rem;}
+  .criterion-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+  .criterion-name{font-size:14px;font-weight:500;}
+  .criterion-desc{font-size:12px;color:var(--ink-light);margin-bottom:6px;}
+  .criterion-score{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--accent);}
+
+  .score-row{display:flex;align-items:center;gap:10px;}
+  input[type="range"]{flex:1;accent-color:var(--accent);}
+  .score-val{min-width:48px;text-align:right;font-variant-numeric:tabular-nums;font-size:14px;font-weight:500;}
+
+  .total-bar{background:var(--paper-warm);border-radius:var(--r);padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;margin:1.2rem 0;}
+  .total-bar .lbl{font-size:14px;font-weight:500;}
+  .total-bar .num{font-family:'DM Serif Display',serif;font-size:1.8rem;}
+
+  textarea{width:100%;padding:10px 14px;background:var(--paper);border:1px solid var(--border);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:var(--ink);resize:vertical;min-height:80px;}
+  textarea:focus{outline:none;border-color:rgba(200,65,10,0.4);box-shadow:0 0 0 3px rgba(200,65,10,0.08);}
+
+  .btn{padding:10px 22px;border-radius:var(--r);border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;}
+  .btn-primary{background:var(--accent);color:white;}
+  .btn-primary:hover{background:#a83508;}
+  .btn-primary:disabled{background:var(--ink-light);cursor:not-allowed;}
+  .btn-ghost{background:white;color:var(--ink-mid);border:1px solid var(--border);}
+
+  .msg{font-size:13px;padding:8px 14px;border-radius:var(--r);margin-top:10px;display:none;}
+  .msg.success{background:var(--success-soft);color:var(--success);border:1px solid #c0e8d4;display:block;}
+  .msg.error{background:#fef2ef;color:#a83508;border:1px solid var(--accent-soft);display:block;}
+
+  .loading{text-align:center;padding:3rem;color:var(--ink-light);font-size:14px;}
+  .empty{text-align:center;padding:3rem;color:var(--ink-light);font-size:14px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">UHK <span>Connect</span></div>
+  <div class="header-right">
+    <span class="role-badge">Komise</span>
+    <span id="user-name" style="font-size:13px;color:rgba(245,243,238,0.7);"></span>
+    <button class="btn-logout" onclick="logout()">Odhlásit</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="page-header">
+    <h1>Hodnocení přihlášek</h1>
+    <p>Ohodnoťte každou přihlášku ve stavu "V hodnocení". Hodnocení lze opakovaně upravit.</p>
+  </div>
+
+  <div id="list-container"><div class="loading">Načítám přihlášky…</div></div>
+
+  <div class="eval-panel" id="eval-panel">
+    <div class="eval-header">
+      <h2 id="ep-nazev"></h2>
+      <div class="meta" id="ep-meta"></div>
+    </div>
+
+    <div class="project-sections" id="ep-content"></div>
+
+    <div class="criteria-section">
+      <h3>Hodnocení</h3>
+      <div id="criteria-fields"></div>
+
+      <div class="total-bar">
+        <span class="lbl">Celkem bodů</span>
+        <span class="num" id="total-score">0</span>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:5px;">Komentář (nepovinný)</label>
+        <textarea id="komentar" placeholder="Zdůvodnění hodnocení, poznámky pro prorektorku…"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-primary" id="btn-save" onclick="saveHodnoceni()">Uložit hodnocení</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('eval-panel').classList.remove('open')">Zavřít</button>
+      </div>
+      <div class="msg" id="msg-eval"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzRQ142bueVniRoBPyci-GLCw9iKnjLii7C51Nf17Xbp_hqOwlOQQl-MPa5FJ1pGp6_/exec';
+const _user = JSON.parse(sessionStorage.getItem('uhk_user') || 'null');
+const _heslo = sessionStorage.getItem('uhk_heslo') || '';
+if (!_user || !['komise','spravce','prorektorka'].includes(_user.role)) location.href = 'index.html';
+document.getElementById('user-name').textContent = _user ? _user.jmeno : '';
+
+let kriteria = [];
+let currentId = null;
+
+async function callAPI(data) {
+  const r = await fetch(API, {method:'POST', body: JSON.stringify(data)});
+  return r.json();
+}
+
+async function init() {
+  const [resK, resP] = await Promise.all([
+    callAPI({action:'getKriteria', email:_user.email, heslo:_heslo}),
+    callAPI({action:'getPrihlasky', email:_user.email, heslo:_heslo, stav:'hodnoceni'})
+  ]);
+
+  if (resK.ok) kriteria = resK.data;
+  renderCriteriaFields();
+
+  if (!resP.ok) {
+    document.getElementById('list-container').innerHTML = '<div class="empty">Chyba: ' + resP.error + '</div>';
+    return;
+  }
+
+  const prihlasky = resP.data.prihlasky || [];
+  if (!prihlasky.length) {
+    document.getElementById('list-container').innerHTML = '<div class="empty">Momentálně nejsou žádné přihlášky v hodnocení.</div>';
+    return;
+  }
+
+  let html = '<div class="prihlaska-list">';
+  prihlasky.forEach(p => {
+    const score = p.prumerne_skore !== null ? p.prumerne_skore : '—';
+    const scoreCls = p.prumerne_skore !== null ? 'done' : 'pending';
+    html += `<div class="prihlaska-row" id="row-${p.id_prihlasky}" onclick="openEval('${p.id_prihlasky}')">
+      <div class="pr-id">${p.id_prihlasky}</div>
+      <div>
+        <div class="pr-name">${p.nazev}</div>
+        <div class="pr-meta">${p.jmeno} · ${p.pracoviste} · ${p.instituce}, ${p.stat}</div>
+      </div>
+      <div class="pr-score ${scoreCls}">${score}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('list-container').innerHTML = html;
+  window._prihlasky = prihlasky;
+}
+
+function renderCriteriaFields() {
+  const container = document.getElementById('criteria-fields');
+  let html = '';
+  kriteria.forEach((k, i) => {
+    html += `<div class="criterion">
+      <div class="criterion-header">
+        <span class="criterion-name">${k.kod} — ${k.nazev}</span>
+        <span class="criterion-score" id="val-${k.kod}">0 / ${k.max_bodu}</span>
+      </div>
+      <div class="criterion-desc">${k.popis}</div>
+      <div class="score-row">
+        <input type="range" id="range-${k.kod}" min="0" max="${k.max_bodu}" value="0" step="1"
+          oninput="updateScore('${k.kod}', ${k.max_bodu})">
+        <span class="score-val" id="num-${k.kod}">0</span>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function updateScore(kod, max) {
+  const v = document.getElementById('range-' + kod).value;
+  document.getElementById('val-' + kod).textContent = v + ' / ' + max;
+  document.getElementById('num-' + kod).textContent = v;
+  calcTotal();
+}
+
+function calcTotal() {
+  let t = 0;
+  kriteria.forEach(k => {
+    t += parseInt(document.getElementById('range-' + k.kod)?.value || 0);
+  });
+  document.getElementById('total-score').textContent = t;
+}
+
+function openEval(id) {
+  document.querySelectorAll('.prihlaska-row').forEach(r => r.classList.remove('active'));
+  document.getElementById('row-' + id)?.classList.add('active');
+
+  const p = window._prihlasky.find(x => x.id_prihlasky === id);
+  if (!p) return;
+  currentId = id;
+
+  document.getElementById('ep-nazev').textContent = p.id_prihlasky + ' — ' + p.nazev;
+  document.getElementById('ep-meta').textContent = p.jmeno + ' · ' + p.pracoviste + ' · ' + p.instituce + ', ' + p.stat + ' · ' + p.datum_od + ' – ' + p.datum_do;
+
+  document.getElementById('ep-content').innerHTML = `
+    <div class="proj-field"><label>Cíl aktivity a očekávané výstupy</label><p>${p.cil}</p></div>
+    <div class="proj-field"><label>Popis spolupráce</label><p>${p.spoluprace}</p></div>
+    <div class="proj-field"><label>Profil žadatele</label><p>${p.profil}</p></div>
+    <div class="proj-field"><label>Celková částka</label><p>${Number(p.celkem_kc||0).toLocaleString('cs')} Kč · ${p.typ_dokladu}</p></div>
+    <div class="proj-field"><label>Odůvodnění rozpočtu</label><p>${p.rozpocet_zduvodneni}</p></div>`;
+
+  // Reset sliderů
+  kriteria.forEach(k => {
+    const r = document.getElementById('range-' + k.kod);
+    if (r) { r.value = 0; updateScore(k.kod, k.max_bodu); }
+  });
+  document.getElementById('komentar').value = '';
+  document.getElementById('msg-eval').className = 'msg';
+
+  const panel = document.getElementById('eval-panel');
+  panel.classList.add('open');
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+async function saveHodnoceni() {
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = 'Ukládám…';
+
+  const body = {action:'hodnoceni', email:_user.email, heslo:_heslo, id_prihlasky:currentId, komentar: document.getElementById('komentar').value};
+  kriteria.forEach(k => { body[k.kod] = parseInt(document.getElementById('range-' + k.kod)?.value || 0); });
+
+  const res = await callAPI(body);
+  const msg = document.getElementById('msg-eval');
+  if (res.ok) {
+    msg.className = 'msg success';
+    msg.textContent = 'Hodnocení uloženo. Celkem: ' + res.data.celkem + ' bodů.';
+  } else {
+    msg.className = 'msg error';
+    msg.textContent = 'Chyba: ' + res.error;
+  }
+  btn.disabled = false; btn.textContent = 'Uložit hodnocení';
+}
+
+function logout() { sessionStorage.clear(); location.href = 'index.html'; }
+
+init();
+</script>
+</body>
+</html>

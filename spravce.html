@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Správce — UHK Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1a1a18;--ink-mid:#4a4a45;--ink-light:#8a8a82;
+    --paper:#f5f3ee;--paper-warm:#ede9e0;
+    --accent:#c8410a;--accent-soft:#f0ddd3;
+    --success:#2d6a4f;--success-soft:#edf7f2;
+    --warn:#7a5c00;--warn-soft:#fef9ec;
+    --border:rgba(26,26,24,0.12);--r:6px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;}
+
+  .site-header{background:var(--ink);color:var(--paper);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'DM Serif Display',serif;font-size:18px;}
+  .logo span{color:var(--accent);font-style:italic;}
+  .header-right{display:flex;align-items:center;gap:1rem;}
+  .role-badge{font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:20px;color:rgba(245,243,238,0.7);}
+  .btn-logout{font-size:12px;color:rgba(245,243,238,0.5);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-logout:hover{color:var(--paper);}
+
+  .layout{max-width:1100px;margin:0 auto;padding:2rem;}
+
+  .page-header{margin-bottom:1.5rem;}
+  .page-header h1{font-family:'DM Serif Display',serif;font-size:1.8rem;font-weight:400;}
+  .page-header p{color:var(--ink-mid);font-size:13px;margin-top:4px;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:2rem;}
+  .stat-card{background:white;border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;}
+  .stat-card .num{font-family:'DM Serif Display',serif;font-size:2rem;}
+  .stat-card .lbl{font-size:12px;color:var(--ink-light);margin-top:2px;}
+
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;}
+  .filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:white;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--ink-mid);transition:all 0.2s;}
+  .filter-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .btn{padding:8px 18px;border-radius:var(--r);border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;}
+  .btn-primary{background:var(--accent);color:white;}
+  .btn-primary:hover{background:#a83508;}
+  .btn-ghost{background:white;color:var(--ink-mid);border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--paper-warm);}
+
+  table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+  thead tr{background:var(--paper-warm);}
+  th{text-align:left;font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-light);padding:10px 14px;border-bottom:1px solid var(--border);}
+  td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--paper);}
+
+  .badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;}
+  .badge-podano{background:#e8f0fe;color:#1a56b0;}
+  .badge-kontrola{background:var(--warn-soft);color:var(--warn);}
+  .badge-hodnoceni{background:#f0eeff;color:#4a3ab5;}
+  .badge-rozhodnuto{background:var(--success-soft);color:var(--success);}
+
+  .actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .btn-sm{padding:5px 12px;font-size:12px;border-radius:4px;border:1px solid var(--border);background:white;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-mid);transition:all 0.2s;}
+  .btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-sm.ok{background:var(--success-soft);color:var(--success);border-color:#c0e8d4;}
+  .btn-sm.ok:hover{background:#d4f0e2;}
+
+  .detail-panel{display:none;background:white;border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-top:1rem;}
+  .detail-panel.open{display:block;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
+  .detail-field label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);}
+  .detail-field p{font-size:14px;margin-top:3px;}
+  .detail-field.full{grid-column:1/-1;}
+
+  .loading{text-align:center;padding:3rem;color:var(--ink-light);font-size:14px;}
+  .empty{text-align:center;padding:3rem;color:var(--ink-light);font-size:14px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">UHK <span>Connect</span></div>
+  <div class="header-right">
+    <span class="role-badge">Správce</span>
+    <span id="user-name" style="font-size:13px;color:rgba(245,243,238,0.7);"></span>
+    <button class="btn-logout" onclick="logout()">Odhlásit</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="page-header">
+    <h1>Správa přihlášek</h1>
+    <p>Formální kontrola, přesun do hodnocení, export dat</p>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="num" id="stat-all">—</div><div class="lbl">Celkem</div></div>
+    <div class="stat-card"><div class="num" id="stat-podano">—</div><div class="lbl">Podáno</div></div>
+    <div class="stat-card"><div class="num" id="stat-kontrola">—</div><div class="lbl">Formální kontrola</div></div>
+    <div class="stat-card"><div class="num" id="stat-hodnoceni">—</div><div class="lbl">V hodnocení</div></div>
+    <div class="stat-card"><div class="num" id="stat-rozhodnuto">—</div><div class="lbl">Rozhodnuto</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="filter-btn active" onclick="setFilter('vse', this)">Vše</button>
+    <button class="filter-btn" onclick="setFilter('podano', this)">Podáno</button>
+    <button class="filter-btn" onclick="setFilter('formalni_kontrola', this)">Formální kontrola</button>
+    <button class="filter-btn" onclick="setFilter('hodnoceni', this)">V hodnocení</button>
+    <button class="filter-btn" onclick="setFilter('rozhodnuto', this)">Rozhodnuto</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost" onclick="exportData('vse')">Export CSV</button>
+  </div>
+
+  <div id="table-container"><div class="loading">Načítám přihlášky…</div></div>
+  <div class="detail-panel" id="detail-panel"></div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzRQ142bueVniRoBPyci-GLCw9iKnjLii7C51Nf17Xbp_hqOwlOQQl-MPa5FJ1pGp6_/exec';
+const _user = JSON.parse(sessionStorage.getItem('uhk_user') || 'null');
+const _heslo = sessionStorage.getItem('uhk_heslo') || '';
+if (!_user || !['spravce','prorektorka'].includes(_user.role)) location.href = 'index.html';
+document.getElementById('user-name').textContent = _user ? _user.jmeno : '';
+
+let allPrihlasky = [];
+let currentFilter = 'vse';
+
+async function callAPI(data) {
+  const r = await fetch(API, {method:'POST', body: JSON.stringify(data)});
+  return r.json();
+}
+
+async function loadPrihlasky() {
+  document.getElementById('table-container').innerHTML = '<div class="loading">Načítám přihlášky…</div>';
+  const res = await callAPI({action:'getPrihlasky', email:_user.email, heslo:_heslo});
+  if (!res.ok) { document.getElementById('table-container').innerHTML = '<div class="empty">Chyba: ' + res.error + '</div>'; return; }
+  allPrihlasky = res.data.prihlasky || [];
+  updateStats();
+  renderTable();
+}
+
+function updateStats() {
+  document.getElementById('stat-all').textContent = allPrihlasky.length;
+  document.getElementById('stat-podano').textContent = allPrihlasky.filter(p => p.stav === 'podano').length;
+  document.getElementById('stat-kontrola').textContent = allPrihlasky.filter(p => p.stav === 'formalni_kontrola').length;
+  document.getElementById('stat-hodnoceni').textContent = allPrihlasky.filter(p => p.stav === 'hodnoceni').length;
+  document.getElementById('stat-rozhodnuto').textContent = allPrihlasky.filter(p => p.stav === 'rozhodnuto').length;
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('detail-panel').classList.remove('open');
+  renderTable();
+}
+
+function stavBadge(stav) {
+  const map = {
+    podano: ['badge-podano','Podáno'],
+    formalni_kontrola: ['badge-kontrola','Formální kontrola'],
+    hodnoceni: ['badge-hodnoceni','V hodnocení'],
+    rozhodnuto: ['badge-rozhodnuto','Rozhodnuto']
+  };
+  const [cls, label] = map[stav] || ['','Neznámý'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function renderTable() {
+  const data = currentFilter === 'vse' ? allPrihlasky : allPrihlasky.filter(p => p.stav === currentFilter);
+  if (!data.length) {
+    document.getElementById('table-container').innerHTML = '<div class="empty">Žádné přihlášky v tomto stavu.</div>';
+    return;
+  }
+  let html = `<table><thead><tr>
+    <th>ID</th><th>Žadatel</th><th>Název projektu</th><th>Instituce</th>
+    <th>Datum podání</th><th>Celkem Kč</th><th>Stav</th><th>Akce</th>
+  </tr></thead><tbody>`;
+  data.forEach(p => {
+    html += `<tr>
+      <td><code style="font-size:12px;">${p.id_prihlasky}</code></td>
+      <td><strong style="font-weight:500;">${p.jmeno}</strong><br><span style="color:var(--ink-light);font-size:12px;">${p.pracoviste}</span></td>
+      <td style="max-width:220px;">${p.nazev}</td>
+      <td>${p.instituce}<br><span style="color:var(--ink-light);font-size:12px;">${p.stat}</span></td>
+      <td style="white-space:nowrap;font-size:12px;">${p.datum_podani}</td>
+      <td style="font-variant-numeric:tabular-nums;">${Number(p.celkem_kc||0).toLocaleString('cs')} Kč</td>
+      <td>${stavBadge(p.stav)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn-sm" onclick="showDetail('${p.id_prihlasky}')">Detail</button>
+          ${p.stav === 'podano' ? `<button class="btn-sm ok" onclick="setStav('${p.id_prihlasky}','formalni_kontrola')">✓ Formální OK</button>` : ''}
+          ${p.stav === 'formalni_kontrola' ? `<button class="btn-sm ok" onclick="setStav('${p.id_prihlasky}','hodnoceni')">→ Do hodnocení</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('table-container').innerHTML = html;
+}
+
+function showDetail(id) {
+  const p = allPrihlasky.find(x => x.id_prihlasky === id);
+  if (!p) return;
+  const panel = document.getElementById('detail-panel');
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <strong style="font-size:15px;">${p.id_prihlasky} — ${p.nazev}</strong>
+      <button class="btn-sm" onclick="document.getElementById('detail-panel').classList.remove('open')">Zavřít</button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-field"><label>Žadatel</label><p>${p.jmeno} · ${p.pracoviste}</p></div>
+      <div class="detail-field"><label>Email</label><p>${p.email_zadatele}</p></div>
+      <div class="detail-field"><label>Typ žadatele</label><p>${p.typ_zadatele}</p></div>
+      <div class="detail-field"><label>Instituce / stát</label><p>${p.instituce}, ${p.stat}</p></div>
+      <div class="detail-field"><label>Typ aktivity</label><p>${p.typ_aktivity}</p></div>
+      <div class="detail-field"><label>Termín realizace</label><p>${p.datum_od} – ${p.datum_do}</p></div>
+      <div class="detail-field full"><label>Cíl aktivity a výstupy</label><p style="white-space:pre-wrap;">${p.cil}</p></div>
+      <div class="detail-field full"><label>Popis spolupráce</label><p style="white-space:pre-wrap;">${p.spoluprace}</p></div>
+      <div class="detail-field full"><label>Profil žadatele</label><p style="white-space:pre-wrap;">${p.profil}</p></div>
+      <div class="detail-field"><label>Celková částka</label><p>${Number(p.celkem_kc||0).toLocaleString('cs')} Kč</p></div>
+      <div class="detail-field"><label>Typ dokladu</label><p>${p.typ_dokladu}</p></div>
+      <div class="detail-field full"><label>Odůvodnění rozpočtu</label><p style="white-space:pre-wrap;">${p.rozpocet_zduvodneni}</p></div>
+    </div>`;
+  panel.classList.add('open');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function setStav(id, stav) {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '…';
+  const res = await callAPI({action:'setStav', email:_user.email, heslo:_heslo, id_prihlasky:id, stav});
+  if (res.ok) {
+    const p = allPrihlasky.find(x => x.id_prihlasky === id);
+    if (p) p.stav = stav;
+    updateStats();
+    renderTable();
+  } else {
+    alert('Chyba: ' + res.error);
+    btn.disabled = false;
+  }
+}
+
+async function exportData(typ) {
+  const res = await callAPI({action:'exportCSV', email:_user.email, heslo:_heslo, typ});
+  if (!res.ok) { alert('Chyba exportu: ' + res.error); return; }
+  const blob = new Blob(['\uFEFF' + res.data.csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'connect-prihlasky-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function logout() { sessionStorage.clear(); location.href = 'index.html'; }
+
+loadPrihlasky();
+</script>
+</body>
+</html>
