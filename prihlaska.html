@@ -973,7 +973,7 @@ document.querySelectorAll('.radio-group input[type="radio"], .check-group input[
 });
 
 // ── Autosave ──────────────────────────────────────────────
-const DRAFT_KEY = 'uhk_connect_draft_' + (_user ? _user.email : 'anon');
+const DRAFT_KEY = 'uhk_connect_draft';
 
 function saveDraft() {
   const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
@@ -1068,7 +1068,7 @@ document.querySelectorAll('input:not([type=file]), textarea, select').forEach(el
 });
 
 // Načti draft po načtení stránky
-window.addEventListener('load', loadDraft);
+document.addEventListener('DOMContentLoaded', loadDraft);
 </script>
 </body>
 </html>
